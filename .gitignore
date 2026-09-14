@@ -1,0 +1,13 @@
+#Images/3D assets
+res/textures
+res/mug.obj
+
+#IDE stuff
+.idea
+
+#Compiled binaries
+*.elf
+*.so
+
+#Build
+build
