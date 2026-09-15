@@ -18,6 +18,7 @@
 #include <OBJ_parser.hpp>
 #include <shader.hpp>
 #include <DeOui.hpp>
+#include <BMP_parser.hpp>
 
 class Camera{
 public:
@@ -170,15 +171,15 @@ int main(){
     glEnable(GL_DEBUG_OUTPUT);
     //glDebugMessageCallback(debug_message_callback, 0); //Activate this when needed, currently it's just annoying.
 
-    Shader baseShader("./res/shaders/baseVertex.glsl", "./res/shaders/baseFragment.glsl");
-    Shader outlineShader("./res/shaders/baseVertex.glsl", "./res/shaders/outlineFragment.glsl");
-    Shader uiShader("./res/shaders/uiVertex.glsl", "./res/shaders/uiFragment.glsl");
+    Shader baseShader("../res/shaders/baseVertex.glsl", "../res/shaders/baseFragment.glsl");
+    Shader outlineShader("../res/shaders/baseVertex.glsl", "../res/shaders/outlineFragment.glsl");
+    Shader uiShader("../res/shaders/uiVertex.glsl", "../res/shaders/uiFragment.glsl");
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     glfwSetCursorPosCallback(window, cursor_pos_callback);
 
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1); //If I don't use this all the textures loaded will look very strange
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1); //Setting this value to 1 makes it so no padding is expected in pixel arrays
     stbi_set_flip_vertically_on_load(1);
 
     std::string ligname = "dirlight1";
@@ -190,15 +191,30 @@ int main(){
     dirlight1.setShaderValues(&baseShader);
 
     glActiveTexture(GL_TEXTURE0);
-    unsigned int windowDif = textureFromFile("./res/textures/window.png");
+    unsigned int windowDif = textureFromFile("../res/textures/window.png");
 
     glActiveTexture(GL_TEXTURE1);
-    unsigned int woodDif = textureFromFile("./res/textures/wood.jpg");
+    unsigned int woodDif = textureFromFile("../res/textures/wood.jpg");
 
     glActiveTexture(GL_TEXTURE2);
-    unsigned int grassDif = textureFromFile("./res/textures/grass.png");
+    unsigned int grassDif = textureFromFile("../res/textures/grass.png");
 
-    Model mug("./res/mug.obj");
+    glActiveTexture(GL_TEXTURE3);
+    unsigned int channels, texID;
+    unsigned char* data = parseBMP("../res/textures/bmp_test.bmp", channels);
+
+    glGenTextures(1, &texID);
+    glBindTexture(GL_TEXTURE_2D, texID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 2, 2, 0, GL_BGR, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+
+    Model mug("../res/mug.obj");
 
     std::vector<float> planeVertices = {
         -0.5f, 0.5f, 0.0f,   0.0f, 0.0f, -1.0f,   0.0f, 1.0f,
@@ -216,6 +232,11 @@ int main(){
     plane.vertexData = planeVertices;
     plane.indices = planeIndices;
     plane.setupMesh(glm::vec3(1.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f));
+
+    Mesh bmpTestPlane;
+    bmpTestPlane.vertexData = planeVertices;
+    bmpTestPlane.indices = planeIndices;
+    bmpTestPlane.setupMesh(glm::vec3(1.0f), glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f));
 
     float lastFrame = 0.0f; //used for calculating deltaTime
 
@@ -279,8 +300,13 @@ int main(){
         baseShader.setMat4("model", model);
         baseShader.setVec3("viewPosition", mainCamera.cameraPos);
 
-        baseShader.setInt("diffuseTex", woodDif - 1);
-        glBindTexture(GL_TEXTURE_2D, woodDif);
+        baseShader.setInt("diffuseTex", texID - 1);
+        glBindTexture(GL_TEXTURE_2D, texID);
+
+        bmpTestPlane.drawMesh(&baseShader, &model);
+
+        /*baseShader.setInt("diffuseTex", woodDif - 1);
+        glBindTexture(GL_TEXTURE_2D, woodDif);*/
         drawOutline(&baseShader, &outlineShader, &model, &mug, glm::vec3(1.0f, 0.0f, 0.0f), 0.01f);
 
         baseShader.setInt("diffuseTex", windowDif - 1);

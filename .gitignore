@@ -11,3 +11,4 @@ res/mug.obj
 
 #Build
 build
+src/cmake-build-debug

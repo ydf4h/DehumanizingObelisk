@@ -47,60 +47,14 @@ void readUINT8(const std::vector<unsigned char>& data, uint8_t* value, size_t of
     *value = data[offset];
 }//specific to 8 bit unsigned int
 
-unsigned char* parseBMP(const std::string& path, unsigned int channels){
-    std::ifstream fileIn;
-    fileIn.open(path, std::ios::binary);
-    if(!fileIn.is_open()){
-        std::cout << "Failed to open file at path: " << path << '\n';
-        return nullptr;
-    }
-
-    std::vector<unsigned char> data(
-        (std::istreambuf_iterator<char>(fileIn)),
-        std::istreambuf_iterator<char>()
-    );
-
-    fileIn.close();
-
-    BITMAPFILEHEADER fh;//read BITMAPFILEHEADER
-    readUINT8(data, &fh.Char1, 0);
-    readUINT8(data, &fh.Char2, 1);
-    readUINT32(data, &fh.Size, 2);
-    readUINT16(data, &fh.Reserved1, 6);
-    readUINT16(data, &fh.Reserved2, 8);
-    readUINT32(data, &fh.PArrayLoc, 10);
+void printDetails(const BITMAPFILEHEADER& fh, const BITMAPV5HEADER& v5) {
+    //Print BITMAPFILEHEADER info
     std::cout << "File header data:\n"
               << "\tFile type: " << fh.Char1 << fh.Char2 << '\n'
               << "\tFile size: " << fh.Size << " bytes" << '\n'
               << "\tPixel array located at an offset of " << fh.PArrayLoc << " bytes" << '\n';
 
-    BITMAPV5HEADER v5;//read BITMAPHEADERV5 
-    readUINT32(data, &v5.Size, 14);
-    readINT32(data, &v5.Width, 18);
-    readINT32(data, &v5.Height, 22);
-    readUINT16(data, &v5.Planes, 26);
-    readUINT16(data, &v5.BitCount, 28);
-    readUINT32(data, &v5.Compression, 30);
-    readUINT32(data, &v5.SizeImage, 34);
-    readINT32(data, &v5.XPelsPerMeter, 38);
-    readINT32(data, &v5.YPelsPerMeter, 42);
-    readUINT32(data, &v5.ClrUsed, 46);
-    readUINT32(data, &v5.ClrImportant, 50);
-    readUINT32(data, &v5.RedMask, 54);
-    readUINT32(data, &v5.GreenMask, 58);
-    readUINT32(data, &v5.BlueMask, 62);
-    readUINT32(data, &v5.AlphaMask, 66);
-    readUINT32(data, &v5.CSType, 70);
-    for(uint8_t i = 0; i < 36; i++){
-        readUINT8(data, &v5.Endpoints[i], 74+i);
-    }
-    readUINT32(data, &v5.GammaRed, 110);
-    readUINT32(data, &v5.GammaGreen, 114);
-    readUINT32(data, &v5.GammaBlue, 118);
-    readUINT32(data, &v5.Intent, 122);
-    readUINT32(data, &v5.ProfileData, 126);
-    readUINT32(data, &v5.ProfileSize, 130);
-    readUINT32(data, &v5.Reserved, 134);
+    //Print BITMAPV5HEADER info
     std::string comp = (v5.Compression == 0) ? "BI_RGB" :
                        (v5.Compression == 1) ? "BI_RLE8" :
                        (v5.Compression == 2) ? "BI_RLE4" :
@@ -130,7 +84,59 @@ unsigned char* parseBMP(const std::string& path, unsigned int channels){
               << "\tGamma blue ignored\n"
               << "\tIntent doesn't matter\n"
               << "\tProfile data located at byte offset " << v5.ProfileData << '\n'
-              << "\tProfile data is " << v5.ProfileSize << " bytes\n"; 
+              << "\tProfile data is " << v5.ProfileSize << " bytes\n";
+}
+
+unsigned char* parseBMP(const std::string& path, unsigned int channels){
+    std::ifstream fileIn;
+    fileIn.open(path, std::ios::binary);
+    if(!fileIn.is_open()){
+        std::cout << "Failed to open file at path: " << path << '\n';
+        return nullptr;
+    }
+
+    std::vector<unsigned char> data(
+        (std::istreambuf_iterator<char>(fileIn)),
+        std::istreambuf_iterator<char>()
+    );
+
+    fileIn.close();
+
+    BITMAPFILEHEADER fh;//read BITMAPFILEHEADER
+    readUINT8(data, &fh.Char1, 0);
+    readUINT8(data, &fh.Char2, 1);
+    readUINT32(data, &fh.Size, 2);
+    readUINT16(data, &fh.Reserved1, 6);
+    readUINT16(data, &fh.Reserved2, 8);
+    readUINT32(data, &fh.PArrayLoc, 10);
+
+    BITMAPV5HEADER v5;//read BITMAPHEADERV5 
+    readUINT32(data, &v5.Size, 14);
+    readINT32(data, &v5.Width, 18);
+    readINT32(data, &v5.Height, 22);
+    readUINT16(data, &v5.Planes, 26);
+    readUINT16(data, &v5.BitCount, 28);
+    readUINT32(data, &v5.Compression, 30);
+    readUINT32(data, &v5.SizeImage, 34);
+    readINT32(data, &v5.XPelsPerMeter, 38);
+    readINT32(data, &v5.YPelsPerMeter, 42);
+    readUINT32(data, &v5.ClrUsed, 46);
+    readUINT32(data, &v5.ClrImportant, 50);
+    readUINT32(data, &v5.RedMask, 54);
+    readUINT32(data, &v5.GreenMask, 58);
+    readUINT32(data, &v5.BlueMask, 62);
+    readUINT32(data, &v5.AlphaMask, 66);
+    readUINT32(data, &v5.CSType, 70);
+    for(uint8_t i = 0; i < 36; i++){
+        readUINT8(data, &v5.Endpoints[i], 74+i);
+    }
+    readUINT32(data, &v5.GammaRed, 110);
+    readUINT32(data, &v5.GammaGreen, 114);
+    readUINT32(data, &v5.GammaBlue, 118);
+    readUINT32(data, &v5.Intent, 122);
+    readUINT32(data, &v5.ProfileData, 126);
+    readUINT32(data, &v5.ProfileSize, 130);
+    readUINT32(data, &v5.Reserved, 134);
 
     //prepare for getting raw pixels by calculating row and padding size in bytes and create an array for pixels
  
@@ -142,8 +148,6 @@ unsigned char* parseBMP(const std::string& path, unsigned int channels){
     for(size_t i = 0; i < v5.Height; i++){
         for(size_t j = 0; j < rowSize; j++){
             if(rowSize - j > padSize){
-                std::cout << "pixelsOut: " << (i + 1) * j << '\n';
-                std::cout << "data: " << j + (rowSize * i) << '\n';
                 pixelsOut[j + (trueRowSize * i)] = data[fh.PArrayLoc + (j + (rowSize * i))];
             }
         }
