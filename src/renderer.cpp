@@ -132,8 +132,6 @@ void debug_message_callback(GLenum source, GLenum type, GLuint ID, GLenum severi
 
 bool firstFrame = 0;
 
-deoEvent::MouseMoved cursorMove;
-
 int main(){
     if (!glfwInit()){
         return -1;
@@ -160,7 +158,7 @@ int main(){
 
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, 1);
 
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
         std::cout << "Failed to initialize GLAD.\n";
@@ -213,6 +211,8 @@ int main(){
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+    delete[] data;
+
 
     Model mug("../res/mug.obj");
 
@@ -253,11 +253,18 @@ int main(){
 
     glm::vec3 clearColor = glm::vec3(0.5f, 0.5f, 0.5f);
 
+    deoui::UIlayer mainLayer(window, &uiShader);
+
     deoui::BGrect background;
     deoui::genBGrect(&background, glm::vec3(50.0f, 50.0f, 0.0f), 300, 300);
+    background.RGBcolor = glm::vec3(1.0f, 0.5f, 0.1f);
 
     deoui::button button1;
     deoui::genButton(&button1, window, glm::vec3(75.0f, 75.0f, 0.0f), 50, 50);
+    button1.RGBcolor = glm::vec3(1.0f, 0.0f, 0.0f);
+
+    mainLayer.members.push_back(&background);
+    mainLayer.members.push_back(&button1);
 
     glCullFace(GL_BACK);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -266,6 +273,9 @@ int main(){
         glm::vec3(0.0f, 0.0f, 1.0f),
         glm::vec3(0.0f, 0.0f, -1.0f)
     };
+
+    double lastCPos[2];
+    glfwGetCursorPos(window, &lastCPos[0], &lastCPos[1]);
 
     while (!glfwWindowShouldClose(window)){
         glfwPollEvents();
@@ -276,6 +286,8 @@ int main(){
         float currentFrame = glfwGetTime();
         float deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;//calculates deltatime
+
+        deoEvent::listenAll(window, lastCPos);
 
         //calculateFPS(deltaTime, accumulation, timesAdded);
 
@@ -329,6 +341,11 @@ int main(){
             plane.drawMesh(&baseShader, &model);
         }//i honestly have no idea what joey does with maps but whatever, and draw windows in order
 
+        button1.pollStatus();
+
+        glm::mat4 uiModel = glm::mat4(1.0f);
+        mainLayer.drawLayer(uiModel, monVidmode);
+
         glEnable(GL_CULL_FACE);
 
         /*uiShader.use();
@@ -348,6 +365,8 @@ int main(){
         }
 
         button1.Draw(&uiShader, model2D);*/
+
+        deoEvent::clearEvents();
 
         processInput(window, deltaTime);
 
@@ -386,10 +405,6 @@ void cursor_pos_callback(GLFWwindow* window, double xPos, double yPos){
         lastY = yPos;
         cursorActivated = 1;
     }
-
-    cursorMove.newPos[0] = &xPos;
-    cursorMove.newPos[1] = &yPos;
-    cursorMove.active = 1;
 
     float xoffset = xPos - lastX;
     float yoffset = lastY - yPos; 

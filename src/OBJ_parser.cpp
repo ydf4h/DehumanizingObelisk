@@ -25,8 +25,6 @@ void loadOBJ(const std::string filepath, Model* modelin){
     std::stringstream fileStringStream;
     std::string filetosearch;
 
-    std::cout << typeid(*modelin).name() << '\n';
-
     unsigned int o_lines;
 
     fileIn.exceptions(std::ifstream::failbit | std::ifstream::badbit);

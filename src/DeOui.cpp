@@ -5,24 +5,34 @@
 
 #include <shader.hpp>
 #include <DeOui.hpp>
+#include <eventHandler.hpp>
 
-void deoui::sUIlayer(const GLFWvidmode* video, Shader* pShader){
-    //Be sure that the shader used here is not used for anything other than UI or it will be messed up
-    glm::mat4 projection = glm::ortho(0, video->width, video->height, 0);
+void deoui::UIlayer::drawLayer(glm::mat4 transform, const GLFWvidmode* video) {
+    glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(video->width), static_cast<float>(video->height), 0.0f);
+    shade->use();
+    shade->setMat4("projection", projection);
 
-    pShader->use();
-    pShader->setMat4("projection", projection);
+    for (unsigned int i = 0; i < members.size(); i++) {
+        members[i]->Draw(shade, transform);
+    }
 }
 
-void deoui::BGrect::Draw(Shader* usedShader, glm::mat4 transform){
+deoui::UIlayer::UIlayer(GLFWwindow* habitat, Shader* shade) {
+    this->habitat = habitat;
+    this->shade = shade;
+}
+
+void deoui::UIelem::Draw(Shader* usedShader, glm::mat4 transform){
     usedShader->use();
 
     transform = glm::translate(transform, position);
     usedShader->setMat4("model", transform);
+    usedShader->setVec3("color", RGBcolor);
 
     glBindVertexArray(VAO);
 
     glDisable(GL_DEPTH_TEST);
+    glEnable(GL_STENCIL_TEST);
 
     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
     glStencilFunc(GL_ALWAYS, 1, 0xFF);
@@ -81,6 +91,7 @@ void deoui::button::Draw(Shader* usedShader, glm::mat4 transform){
 
     transform = glm::translate(transform, position);
     usedShader->setMat4("model", transform);
+    usedShader->setVec3("color", RGBcolor);
 
     glBindVertexArray(VAO);
 
@@ -90,7 +101,7 @@ void deoui::button::Draw(Shader* usedShader, glm::mat4 transform){
 
     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
     glStencilFunc(GL_EQUAL, 1, 0xFF);
-    glStencilMask(0x00);
+    glStencilMask(0xFF);
 
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, (void*)0);
 
@@ -147,63 +158,35 @@ void deoui::genButton(button* target, GLFWwindow* habitat, glm::vec3 position, i
     glBindVertexArray(0);
 }
 
-bool deoui::button::pollStatus(){
-    double xPos;
-    double yPos;
-    glfwGetCursorPos(habitat, &xPos, &yPos);
-
-    bool collX = 0;
-    bool collY = 0;
-
-    if(xPos <= AABB[3] && xPos >= AABB[0]){
-        collX = 1;
-    }
-
-    if(yPos <= AABB[2] && yPos >= AABB[1]){
-        collY = 1;
-    }
-
-    //check fi cursor in box and check press if no then check release because toggle and activr state so toggle off on and compare past state to current
-
-    GLenum clickState = glfwGetMouseButton(habitat, GLFW_MOUSE_BUTTON_1);
-
-    if(collX && collY){
-        if(prevClick == GLFW_PRESS && clickState == GLFW_RELEASE){
-            if(!toggled){
-                toggled = 1;
-            }else{
-                toggled = 0;
-            }
+void deoui::button::pollStatus(){
+    using namespace deoEvent;
+    if (MM != nullptr) {
+        if (MM->currentPos[0] <= this->AABB[2] && MM->currentPos[0] >= this->AABB[0]) {
+            colX = 1;//there is a problem here with window sizing and AABB
+        }else {
+            colX = 0;
+        }
+        if (MM->currentPos[1] <= this->AABB[3] && MM->currentPos[1] >= this->AABB[1]) {
+            colY = 1;//same problem here
+        }else {
+            colY = 0;
         }
     }
 
-    prevClick = clickState;
+    if (colX && colY) {
+        this->RGBcolor = glm::vec3(0.5f);
+    }else {
+        this->RGBcolor = glm::vec3(0.0f);
+    }
 
-    /*if(status == deouiState::DISABLING && glfwGetMouseButton(habitat, GLFW_MOUSE_BUTTON_1) == GLFW_RELEASE){
-        status = deouiState::TOGGLED_OFF;
-    }else if(status == deouiState::ACTIVE && glfwGetMouseButton(habitat, GLFW_MOUSE_BUTTON_1) == GLFW_RELEASE){
-        status = deouiState::TOGGLED_ON;
-    }else if(status == deouiState::TOGGLED_ON){
-        if(glfwGetMouseButton(habitat, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS){
-            status = deouiState::DISABLING;
-        }else{
-            status = deouiState::TOGGLED_ON;
+    if (MLC != nullptr && colX && colY) {
+        if (MLC->activity == GLFW_RELEASE && LMLC.activity == GLFW_PRESS) {
+            int swap = 1 - active;
+            active = swap;
         }
-    }else if(status == deouiState::TOGGLED_OFF){
-        if(glfwGetMouseButton(habitat, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS){
-            status = deouiState::ACTIVE;
-        }else{
-            status = deouiState::TOGGLED_OFF;
-        }
-    }else if(collX && collY){
-        if(glfwGetMouseButton(habitat, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS){
-            status = deouiState::ACTIVE;
-        }else{
-            status = deouiState::HOVER;
-        }
-    }else{
-        status = deouiState::STILL;
-    }*/
+    }
 
-    return toggled;
+    if (active) {
+        this->RGBcolor = glm::vec3(1.0f);
+    }
 }

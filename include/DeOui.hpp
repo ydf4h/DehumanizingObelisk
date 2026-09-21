@@ -12,48 +12,41 @@
 #include <shader.hpp>
 
 namespace deoui{
-    class UIlayer{
-    public:
-        
-    };
-
-    void sUIlayer(const GLFWvidmode* window, Shader* pShader);
-
-    class BGrect{
+    class UIelem{
     public:
         std::vector<float> vertexData;
         std::vector<unsigned int> indices;
-
         glm::vec3 position;
-
+        glm::vec3 RGBcolor;
         unsigned int VAO;
-
-        void Draw(Shader* usedShader, glm::mat4 transform);
+        virtual void Draw(Shader* usedShader, glm::mat4 transform);
     };
+
+    typedef UIelem BGrect;
 
     void genBGrect(BGrect* target, glm::vec3 position, int width, int height);
 
-    class button{
+    class button : public UIelem{
     public:
         GLFWwindow* habitat;
-
-        std::vector<float> vertexData;
-        std::vector<unsigned int> indices;
-
-        glm::vec3 position;
-
         std::vector<float> AABB;
-
-        unsigned int VAO;
-
-        bool toggled;
-
-        GLenum prevClick;
-
-        void Draw(Shader* usedShader, glm::mat4 transform);
-
-        bool pollStatus();
+        bool colX;
+        bool colY;
+        bool active;
+        void pollStatus();
+        virtual void Draw(Shader* usedShader, glm::mat4 transform);
     };
 
     void genButton(button* target, GLFWwindow* habitat, glm::vec3 position, int width, int height);
+
+    class UIlayer{
+    public:
+        GLFWwindow* habitat;
+        std::vector<UIelem*> members;
+        Shader* shade;
+
+        UIlayer(GLFWwindow* habitat, Shader* shade);
+
+        virtual void drawLayer(glm::mat4 transform, const GLFWvidmode* video);
+    };
 }
