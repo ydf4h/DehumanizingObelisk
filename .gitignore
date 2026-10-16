@@ -1,13 +1,20 @@
-#Images/3D assets
+#Images/assets
 res/textures
-res/mug.obj
+res/fonts
+*.png
+*.jpg
+*.jpeg
+*.bmp
+*.obj
 
 #IDE stuff
 .idea
+.cache
 
 #Compiled binaries
 *.elf
 *.so
+lib
 
 #Build
 build

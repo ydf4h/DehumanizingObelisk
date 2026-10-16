@@ -25,6 +25,7 @@ public:
     void drawMesh(Shader* usedShader, glm::mat4* transform);
 
     void updateTransform(glm::vec3 sca, glm::vec3 pos, glm::vec3 ori);
+    void resetTransform();
 };
 
 class Model{
@@ -41,6 +42,5 @@ public:
     void Draw(Shader* usedShader, glm::mat4* transform);
 
     void updTransform(glm::vec3 scale, glm::vec3 pos, glm::vec3 ori);
-
     void resetTransform();
 };

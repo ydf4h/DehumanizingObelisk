@@ -9,19 +9,25 @@ namespace deoEvent{
     };
 
     struct MouseMoved : Event{
+        double lastPos[2] = {0, 0};
         double currentPos[2] = {0, 0};
     };
-
     inline MouseMoved* MM;
 
     struct MouseLClick : Event {
         GLenum activity;
     };
-
     inline MouseLClick* MLC;
     inline MouseLClick LMLC;
 
-    void listenAll(GLFWwindow* window, double lastCPos[2]);
+    struct WindowResize : Event {
+        int width, height;
+        int winWidth, winHeight;
+    };
+    inline int lWidth = 0, lHeight = 0;
+    inline WindowResize* WRS;
+
+    void listenAll(GLFWwindow* window, const GLFWvidmode* video, double lastCPos[2]);
 
     const deoEvent::MouseMoved* requestMM();
 

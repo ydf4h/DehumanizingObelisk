@@ -10,12 +10,19 @@ void Mesh::drawMesh(Shader* usedShader, glm::mat4* transform){
     usedShader->use();
 
     *transform = glm::mat4(1.0f);
-    if(parent != nullptr){
-        *transform = glm::translate(*transform, parent->position + this->position);
-        *transform = glm::scale(*transform, parent->scale + this->scale);
-    }else{
-        *transform = glm::translate(*transform, this->position);
+
+    if (this->parent != nullptr) {
+        *transform = glm::scale(*transform, this->parent->scale);
+        *transform = glm::rotate(*transform, glm::radians(this->parent->orientation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+        *transform = glm::rotate(*transform, glm::radians(this->parent->orientation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+        *transform = glm::rotate(*transform, glm::radians(this->parent->orientation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+        *transform = glm::translate(*transform, this->parent->position);
+    }else {
         *transform = glm::scale(*transform, this->scale);
+        *transform = glm::rotate(*transform, glm::radians(this->orientation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+        *transform = glm::rotate(*transform, glm::radians(this->orientation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+        *transform = glm::rotate(*transform, glm::radians(this->orientation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+        *transform = glm::translate(*transform, this->position);
     }
 
     usedShader->setMat4("model", *transform);
@@ -54,9 +61,9 @@ void Mesh::setupMesh(){
 }
 
 void Mesh::setupMesh(glm::vec3 sca, glm::vec3 pos, glm::vec3 ori){
-    scale = sca;
-    position = pos;
-    orientation = ori;
+    this->scale = sca;
+    this->position = pos;
+    this->orientation = ori;
 
     unsigned int VBO, EBO;
 
@@ -89,6 +96,12 @@ void Mesh::updateTransform(glm::vec3 sca, glm::vec3 pos, glm::vec3 ori){
     orientation = ori;
 }
 
+void Mesh::resetTransform() {
+    scale = glm::vec3(1.0f);
+    position = glm::vec3(0.0f);
+    orientation = glm::vec3(0.0f);
+}
+
 Model::Model(const std::string filepath, glm::vec3 scale, glm::vec3 pos, glm::vec3 ori){
     loadOBJ(filepath, this);
 
@@ -97,7 +110,8 @@ Model::Model(const std::string filepath, glm::vec3 scale, glm::vec3 pos, glm::ve
     this->orientation = ori;
 
     for(unsigned int i = 0; i < meshes.size(); i++){
-        meshes[i].setupMesh();
+        meshes[i].setupMesh(this->scale, this->position, this->orientation);
+        meshes[i].parent = this;
     }
 }
 
@@ -109,18 +123,12 @@ Model::Model(const std::string filepath){
     this->orientation = glm::vec3(0.0f);
 
     for(unsigned int i = 0; i < meshes.size(); i++){
-        meshes[i].setupMesh();
+        meshes[i].setupMesh(this->scale, this->position, this->orientation);
     }
 }
 
 void Model::Draw(Shader* usedShader, glm::mat4* transform){
     usedShader->use();
-
-    *transform = glm::mat4(1.0f);
-    *transform = glm::translate(*transform, position);
-    *transform = glm::scale(*transform, scale);
-
-    usedShader->setMat4("model", *transform);
 
     for(unsigned int i = 0; i < meshes.size(); i++){
         meshes[i].drawMesh(usedShader, transform);

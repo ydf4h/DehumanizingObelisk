@@ -1,13 +1,15 @@
 #include <eventHandler.hpp>
 #include <typeinfo>
 
-void deoEvent::listenAll(GLFWwindow* window, double lastCPos[2]) {
+void deoEvent::listenAll(GLFWwindow* window, const GLFWvidmode* video, double lastCPos[2]) {
     double xPos, yPos;
     glfwGetCursorPos(window, &xPos, &yPos);
     if (xPos != lastCPos[0] || yPos != lastCPos[1]) {
         deoEvent::MouseMoved* mouse_move = new deoEvent::MouseMoved;
         mouse_move->currentPos[0] = xPos;
         mouse_move->currentPos[1] = yPos;
+        mouse_move->lastPos[0] = lastCPos[0];
+        mouse_move->lastPos[1] = lastCPos[1];
         MM = mouse_move;
     }else {
         MM = nullptr;
@@ -23,6 +25,21 @@ void deoEvent::listenAll(GLFWwindow* window, double lastCPos[2]) {
     }else {
         MLC = nullptr;
     }
+
+    int width, height;
+    glfwGetFramebufferSize(window, &width, &height);
+    if (width != lWidth || height != lHeight) {
+        deoEvent::WindowResize* window_resize = new deoEvent::WindowResize;
+        window_resize->width = width;
+        window_resize->height = height;
+        window_resize->winWidth = video->width;
+        window_resize->winHeight = video->height;
+        WRS = window_resize;
+    }else {
+        WRS = nullptr;
+    }
+    lWidth = width;
+    lHeight = height;
 }
 
 /*const deoEvent::Event* deoEvent::requestEvent(Event* type) {

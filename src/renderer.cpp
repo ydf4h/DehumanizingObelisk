@@ -1,6 +1,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image/stb_image.h>
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
 #include <glad4.6/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -120,7 +123,7 @@ unsigned int textureFromFile(const char* path){
     return textureID;
 }
 
-void calculateFPS(float deltaTime, float& accumulation, unsigned int& timesAdded);
+void calculateFPS(float deltaTime, float& accumulation, float& value, unsigned int& timesAdded);
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 
@@ -156,7 +159,7 @@ int main(){
 
     glfwWindowHint(GLFW_DEPTH_BITS, 24); //Creates depth for the window
 
-    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, 1);
+    //glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, 1);
 
     //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -166,18 +169,20 @@ int main(){
         return -1;
     }
 
-    glEnable(GL_DEBUG_OUTPUT);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1); //Setting this value to 1 makes it so no padding is expected in pixel arrays
+
+    //glEnable(GL_DEBUG_OUTPUT);
     //glDebugMessageCallback(debug_message_callback, 0); //Activate this when needed, currently it's just annoying.
 
     Shader baseShader("../res/shaders/baseVertex.glsl", "../res/shaders/baseFragment.glsl");
     Shader outlineShader("../res/shaders/baseVertex.glsl", "../res/shaders/outlineFragment.glsl");
     Shader uiShader("../res/shaders/uiVertex.glsl", "../res/shaders/uiFragment.glsl");
+    Shader textShader("../res/shaders/textVertex.glsl", "../res/shaders/textFragment.glsl");
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     glfwSetCursorPosCallback(window, cursor_pos_callback);
 
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1); //Setting this value to 1 makes it so no padding is expected in pixel arrays
     stbi_set_flip_vertically_on_load(1);
 
     std::string ligname = "dirlight1";
@@ -188,16 +193,14 @@ int main(){
     DirLight dirlight1(ligname, ligdir, ambient, diffuse, specular);
     dirlight1.setShaderValues(&baseShader);
 
-    glActiveTexture(GL_TEXTURE0);
     unsigned int windowDif = textureFromFile("../res/textures/window.png");
 
-    glActiveTexture(GL_TEXTURE1);
     unsigned int woodDif = textureFromFile("../res/textures/wood.jpg");
 
-    glActiveTexture(GL_TEXTURE2);
     unsigned int grassDif = textureFromFile("../res/textures/grass.png");
 
-    glActiveTexture(GL_TEXTURE3);
+    unsigned int resizeDif = textureFromFile("../res/textures/uiThings/resize.png");
+
     unsigned int channels, texID;
     unsigned char* data = parseBMP("../res/textures/bmp_test.bmp", channels);
 
@@ -213,8 +216,7 @@ int main(){
 
     delete[] data;
 
-
-    Model mug("../res/mug.obj");
+    Model mug("../res/mug.obj", glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
     std::vector<float> planeVertices = {
         -0.5f, 0.5f, 0.0f,   0.0f, 0.0f, -1.0f,   0.0f, 1.0f,
@@ -253,18 +255,10 @@ int main(){
 
     glm::vec3 clearColor = glm::vec3(0.5f, 0.5f, 0.5f);
 
-    deoui::UIlayer mainLayer(window, &uiShader);
-
-    deoui::BGrect background;
-    deoui::genBGrect(&background, glm::vec3(50.0f, 50.0f, 0.0f), 300, 300);
-    background.RGBcolor = glm::vec3(1.0f, 0.5f, 0.1f);
-
-    deoui::button button1;
-    deoui::genButton(&button1, window, glm::vec3(75.0f, 75.0f, 0.0f), 50, 50);
-    button1.RGBcolor = glm::vec3(1.0f, 0.0f, 0.0f);
-
-    mainLayer.members.push_back(&background);
-    mainLayer.members.push_back(&button1);
+    bool outlineRed = 0;
+    deoui::UIlayer mainLayer(window, &uiShader, &textShader, 300, 300, resizeDif, glm::vec2(50.0f, 50.0f), glm::vec3(0.0f, 0.0f, 0.2f), glm::vec3(1.0f, 1.0f, 1.0f));
+    mainLayer.addButton("juice");
+    mainLayer.addCheckbox("outline: red?", &outlineRed);
 
     glCullFace(GL_BACK);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -277,6 +271,18 @@ int main(){
     double lastCPos[2];
     glfwGetCursorPos(window, &lastCPos[0], &lastCPos[1]);
 
+    deoui::loadFont("../res/fonts/arial.ttf", 128);
+
+    /*unsigned int fpsVAO, fpsVBO;
+    glGenVertexArrays(1, &fpsVAO);
+    glGenBuffers(1, &fpsVBO);
+    glBindVertexArray(fpsVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, fpsVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    float FPS = 0.0f;*/
+
     while (!glfwWindowShouldClose(window)){
         glfwPollEvents();
 
@@ -287,19 +293,11 @@ int main(){
         float deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;//calculates deltatime
 
-        deoEvent::listenAll(window, lastCPos);
-
-        //calculateFPS(deltaTime, accumulation, timesAdded);
+        deoEvent::listenAll(window, monVidmode, lastCPos);
 
         glm::mat4 projection = glm::perspective(glm::radians(mainCamera.fov), 1920.0f / 1200.0f, 0.1f, 1000.0f);
         glm::mat4 view = glm::lookAt(mainCamera.cameraPos, mainCamera.cameraPos + mainCamera.cameraFront, mainCamera.cameraTop);
         glm::mat4 model = glm::mat4(1.0f);
-
-        baseShader.use();
-        baseShader.setMat4("projection", projection);
-        baseShader.setMat4("view", view);
-        baseShader.setMat4("model", model);
-        baseShader.setVec3("viewPosition", mainCamera.cameraPos);
 
         outlineShader.use();
         outlineShader.setMat4("projection", projection);
@@ -312,23 +310,18 @@ int main(){
         baseShader.setMat4("model", model);
         baseShader.setVec3("viewPosition", mainCamera.cameraPos);
 
-        baseShader.setInt("diffuseTex", texID - 1);
         glBindTexture(GL_TEXTURE_2D, texID);
 
         bmpTestPlane.drawMesh(&baseShader, &model);
 
-        /*baseShader.setInt("diffuseTex", woodDif - 1);
-        glBindTexture(GL_TEXTURE_2D, woodDif);*/
-        drawOutline(&baseShader, &outlineShader, &model, &mug, glm::vec3(1.0f, 0.0f, 0.0f), 0.01f);
+        if (outlineRed) {
+            drawOutline(&baseShader, &outlineShader, &model, &mug, glm::vec3(1.0f, 0.0f, 0.0f), 0.01f);
+        }else {
+            drawOutline(&baseShader, &outlineShader, &model, &mug, glm::vec3(1.0f, 1.0f, 1.0f), 0.01f);
+        }
 
-        baseShader.setInt("diffuseTex", windowDif - 1);
         glBindTexture(GL_TEXTURE_2D, windowDif);
         glDisable(GL_CULL_FACE);
-
-        /*if(cursorMove.active){
-            std::cout << "little buddy" << countup << '\n';
-        }
-        cursorMove.active = 0;*/
 
         std::map<float, glm::vec3> sorted;
         for(unsigned int i = 0; i < windowPositions.size(); i++){
@@ -341,30 +334,15 @@ int main(){
             plane.drawMesh(&baseShader, &model);
         }//i honestly have no idea what joey does with maps but whatever, and draw windows in order
 
-        button1.pollStatus();
-
         glm::mat4 uiModel = glm::mat4(1.0f);
         mainLayer.drawLayer(uiModel, monVidmode);
 
         glEnable(GL_CULL_FACE);
 
-        /*uiShader.use();
-
-        glm::mat4 projectionOrtho = glm::ortho(0.0f, 1920.0f, 1200.0f, 0.0f);
-        glm::mat4 model2D = glm::mat4(1.0f);
-
-        uiShader.setMat4("projection", projectionOrtho);
-        uiShader.setMat4("model", model2D);
-
-        uiShader.setVec3("currentColor", glm::vec3(0.0f, 0.0f, 0.0f));
-
-        background.Draw(&uiShader, model2D);
-
-        if(button1.pollStatus() == deouiState::TOGGLED_ON){
-            uiShader.setVec3("currentColor", glm::vec3(1.0f, 1.0f, 1.0f));
-        }
-
-        button1.Draw(&uiShader, model2D);*/
+        /*calculateFPS(deltaTime, accumulation, FPS, timesAdded);
+        std::string FPScount = "FPS: ";
+        FPScount.append(std::to_string(FPS));
+        deoui::renderText(&textShader, fpsVAO, fpsVBO, FPScount, 10.0f, 50.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));*/
 
         deoEvent::clearEvents();
 
@@ -373,17 +351,20 @@ int main(){
         glfwSwapBuffers(window);
     }
 
+    mainLayer.deleteLayer();
+
     glfwTerminate();
     return 0;
 }
 
 float deltaAccumulation = 0.0f;
-void calculateFPS(float deltaTime, float& accumulation, unsigned int& timesAdded){
+void calculateFPS(float deltaTime, float& accumulation, float& value, unsigned int& timesAdded){
     deltaAccumulation += deltaTime;
     float instantFPS = 1.0f / deltaTime;
     accumulation += instantFPS;
     timesAdded++;
     if(deltaAccumulation >= 1.0f){
+        value = accumulation / timesAdded;
         std::cout << "FPS: " << accumulation / timesAdded << '\n';
         deltaAccumulation = 0.0f;
         accumulation = 0.0f;
