@@ -22,6 +22,7 @@
 #include <shader.hpp>
 #include <DeOui.hpp>
 #include <BMP_parser.hpp>
+#include <time.hpp>
 
 class Camera{
 public:
@@ -79,7 +80,7 @@ void drawOutline(Shader* base, Shader* outline, glm::mat4* transform, Model* mod
     outline->setVec3("outlineColor", color);
     model->Draw(outline, transform);//setup and draw outline
 
-    model->resetTransform();
+    model->scale = glm::vec3(1.0f);
     glStencilFunc(GL_ALWAYS, 1, 0xFF);
     glStencilMask(0xFF);
     glDisable(GL_STENCIL_TEST);//cleanup and restore base model
@@ -172,7 +173,7 @@ int main(){
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1); //Setting this value to 1 makes it so no padding is expected in pixel arrays
 
     //glEnable(GL_DEBUG_OUTPUT);
-    //glDebugMessageCallback(debug_message_callback, 0); //Activate this when needed, currently it's just annoying.
+    glDebugMessageCallback(debug_message_callback, 0); //Activate this when needed, currently it's just annoying.
 
     Shader baseShader("../res/shaders/baseVertex.glsl", "../res/shaders/baseFragment.glsl");
     Shader outlineShader("../res/shaders/baseVertex.glsl", "../res/shaders/outlineFragment.glsl");
@@ -198,8 +199,6 @@ int main(){
     unsigned int woodDif = textureFromFile("../res/textures/wood.jpg");
 
     unsigned int grassDif = textureFromFile("../res/textures/grass.png");
-
-    unsigned int resizeDif = textureFromFile("../res/textures/uiThings/resize.png");
 
     unsigned int channels, texID;
     unsigned char* data = parseBMP("../res/textures/bmp_test.bmp", channels);
@@ -256,9 +255,18 @@ int main(){
     glm::vec3 clearColor = glm::vec3(0.5f, 0.5f, 0.5f);
 
     bool outlineRed = 0;
-    deoui::UIlayer mainLayer(window, &uiShader, &textShader, 300, 300, resizeDif, glm::vec2(50.0f, 50.0f), glm::vec3(0.0f, 0.0f, 0.2f), glm::vec3(1.0f, 1.0f, 1.0f));
-    mainLayer.addButton("juice");
-    mainLayer.addCheckbox("outline: red?", &outlineRed);
+    float galopModule = 4.20002f;
+    deoui::UIlayer* mainLayer = new deoui::UIlayer(&uiShader, &textShader, 300, 300, glm::vec2(50.0f, 50.0f), "mainLayer");
+    mainLayer->addButton("juice");
+    mainLayer->addCheckbox("outline: red?", &outlineRed);
+    mainLayer->addFloatInField(&galopModule);
+    mainLayer->addVec3InField(&mug.position);
+
+    deoui::UIlayer* secondaryLayer = new deoui::UIlayer(&uiShader, &textShader, 300, 300, glm::vec2(1620.0f, 900.0f), "secondaryLayer");
+    secondaryLayer->addButton("thing");
+
+    deoui::UIlayer* thirdLayer = new deoui::UIlayer(&uiShader, &textShader, 300, 300, glm::vec2(100.0f, 100.0f), "thirdlayer");
+    thirdLayer->addButton("thing");
 
     glCullFace(GL_BACK);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -270,8 +278,16 @@ int main(){
 
     double lastCPos[2];
     glfwGetCursorPos(window, &lastCPos[0], &lastCPos[1]);
+    deoEvent::initialize(window);
 
     deoui::loadFont("../res/fonts/arial.ttf", 128);
+    /*const int charDimensions[] = {
+        15, 15
+    };
+    const int BMPdimensions[] = {
+        180, 120
+    };
+    deoui::loadBMPfont("../res/textures/uiThings/fapFont.png", charDimensions, 95, BMPdimensions);*/
 
     /*unsigned int fpsVAO, fpsVBO;
     glGenVertexArrays(1, &fpsVAO);
@@ -289,11 +305,13 @@ int main(){
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         glClearColor(clearColor.r, clearColor.g, clearColor.b, 1.0f);
 
+        deoTime::updWaitTasks();
+
         float currentFrame = glfwGetTime();
         float deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;//calculates deltatime
 
-        deoEvent::listenAll(window, monVidmode, lastCPos);
+        deoEvent::listenAll(monVidmode, lastCPos);
 
         glm::mat4 projection = glm::perspective(glm::radians(mainCamera.fov), 1920.0f / 1200.0f, 0.1f, 1000.0f);
         glm::mat4 view = glm::lookAt(mainCamera.cameraPos, mainCamera.cameraPos + mainCamera.cameraFront, mainCamera.cameraTop);
@@ -314,6 +332,7 @@ int main(){
 
         bmpTestPlane.drawMesh(&baseShader, &model);
 
+        mug.position.y = sin(glfwGetTime());
         if (outlineRed) {
             drawOutline(&baseShader, &outlineShader, &model, &mug, glm::vec3(1.0f, 0.0f, 0.0f), 0.01f);
         }else {
@@ -335,7 +354,7 @@ int main(){
         }//i honestly have no idea what joey does with maps but whatever, and draw windows in order
 
         glm::mat4 uiModel = glm::mat4(1.0f);
-        mainLayer.drawLayer(uiModel, monVidmode);
+        deoui::renderUI(uiModel);
 
         glEnable(GL_CULL_FACE);
 
@@ -351,7 +370,8 @@ int main(){
         glfwSwapBuffers(window);
     }
 
-    mainLayer.deleteLayer();
+    deoui::cleanUpRes();
+    delete deoEvent::mainCursor;
 
     glfwTerminate();
     return 0;
