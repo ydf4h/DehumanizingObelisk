@@ -49,81 +49,131 @@ namespace deoui{
     void loadBMPfont(const char* pathToFont, const int charDimensions[], int charCount, const int BMPdimensions[]);
     void renderBMPfont(Shader* shade, std::string text, glm::vec2 position, glm::mat4 transform, glm::vec3 color);
 
-    class UIelem{
+    class BGrect{
     public:
         std::vector<float> vertexData;//main rect vertices
-        std::vector<unsigned int> indices;//outline and main rect indices
+        std::vector<unsigned int> indices;//main rect indices
         unsigned int VAO, VBO;//main rect vao and vertex buffer
 
         glm::vec3 RGBcolor;//main rect color
 
-        glm::vec3 position;//main rect position in pixels
+        glm::vec2 position;//main rect position in pixels
         int width, height;//main rect width and height in pixels
 
-        virtual void Draw(Shader* usedShader, glm::mat4 transform);//draw main rect and outline, virtual for various types
-    };
-    typedef UIelem BGrect;
-    void genBGrect(BGrect* target, glm::vec3 position, int width, int height);
+        BGrect(glm::vec2 position, int width, int height);
 
-    class checkbox : public UIelem{
+        void Draw(Shader* usedShader, glm::mat4 transform);
+    };
+
+    class checkbox{
     public:
+        std::vector<float> vertexData;
+        std::vector<unsigned int> indices;
+        unsigned int VAO;
+
+        glm::vec3 RGBcolor;
+
+        glm::vec2 position;
+
         std::vector<float> AABB;//aabb for collision detection with cursor
         bool colX = 0, colY = 0;//if the cursor collides with AABB on x and y axis
         bool* value;//boolean value that changes on checkbox activation
+
         unsigned int textVAO, textVBO;//text box
         std::string text;//text displayed to right of checkbox
+
+        checkbox(bool* value, glm::vec2 position, std::string name);
+
         void pollStatus();
+
         void Draw(Shader* usedShader, Shader* text, glm::mat4 transform);
     };
-    void genCheckbox(checkbox* target, bool* value, glm::vec3 position, int width, int height, std::string name);
 
-    class button : public UIelem{
+    class button{
     public:
+        std::vector<float> vertexData;
+        std::vector<unsigned int> indices;
+        unsigned int VAO;
+
+        glm::vec3 RGBcolor;
+
+        glm::vec2 position;
+
         std::vector<float> AABB;
         bool colX = 0, colY = 0;
         bool active = 0;
-        unsigned int textVAO;
-        unsigned int textVBO;
+
+        unsigned int textVAO, textVBO;
         std::string text;
+
+        button(glm::vec2 position, std::string name);
+
         void pollStatus();
+
         void Draw(Shader* usedShader, Shader* text, glm::mat4 transform);
     };
-    void genButton(button* target, glm::vec3 position, int width, int height, std::string name);
 
     class UIlayer;
 
-    class paneHandle : public UIelem {
+    class paneHandle{
     public:
+        std::vector<float> paneVertexData;
+        std::vector<unsigned int> paneIndices;
+        unsigned int paneVAO, paneVBO;
+
+        glm::vec2 panePosition;
+        int paneWidth;
+
         UIlayer* parent;
+
         std::vector<float> paneAABB;
         bool colX = 0, colY = 0;
         bool moveActive = 0;
         glm::vec2 posDiff;
+
         button* close;
         checkbox* collapse;
         bool collapsed = 0;
+
         std::string name;
         unsigned int textVAO;
         unsigned int textVBO;
+
+        paneHandle(UIlayer* parent, glm::vec2 position, int width, std::string name);
+
         void pollStatus();
+
         bool isMouseHover();
+
         bool isActive();
+
         void Draw(Shader* usedShader, Shader* text, glm::mat4 transform);
     };
-    void genPaneHandle(paneHandle* target, UIlayer* parent, glm::vec2 position, int width, int height, std::string name);
 
-    class resizeHandle : public UIelem {
+    class resizeHandle{
     public:
         UIlayer* parent;
+
+        std::vector<float> vertexData;
+        std::vector<unsigned int> indices;
+        unsigned int VAO;
+
+        glm::vec2 position;
+
         std::vector<float> AABB;
         bool colX = 0, colY = 0;
         bool resizeActive = 0;
         glm::vec2 sizeDiff;
+
         unsigned int resizeTex;
+        glm::vec3 RGBcolor;
+
+        resizeHandle(UIlayer* parent, glm::vec2 position, std::string pathToTex);
+
         void pollStatus();
+
         void Draw(Shader* usedShader, glm::mat4 transform);
     };
-    void genResizeHandle(resizeHandle* target, UIlayer* parent, glm::vec2 position, std::string pathToTex);
 
     class floatInField {
     public:
@@ -142,11 +192,12 @@ namespace deoui{
 
         std::string displayValue;
 
+        floatInField(glm::vec2 position, float* value);
+
         void Draw(Shader* usedShader, Shader* textShader, glm::mat4 transform);
 
         void pollStatus();
     };
-    void genFloatInField(floatInField* target, glm::vec2 position, float* value);
 
     class vec3InField{
     public:
@@ -154,39 +205,42 @@ namespace deoui{
         glm::vec2 position;
         glm::vec3* vectorValue;
 
+        vec3InField(glm::vec2 position, glm::vec3* value);
+
         void Draw(Shader* usedShader, Shader* textShader, glm::mat4 transform);
 
         void pollStatus();
 
         void updPositions(int diffX, int diffY);
     };
-    void genVec3InField(vec3InField* target, glm::vec2 position, glm::vec3* value);
 
     class UIlayer{
     public:
-        BGrect* pane;
-        std::vector<button*> buttons;
-        std::vector<checkbox*> checkboxes;
-        std::vector<floatInField*> floatFields;
-        std::vector<vec3InField*> vec3Fields;
-        paneHandle* handle;
+        BGrect* pane;//solid color background rectangle for the layer, provides no functionality
+
+        std::vector<button*> buttons;//all buttons on the layer
+        std::vector<checkbox*> checkboxes;//all checkboxes on the layer
+        std::vector<floatInField*> floatFields;//all float in fields on the layer
+        std::vector<vec3InField*> vec3Fields;//all 3d vector in fields on the layer
 
         Shader* shade;//shader for opaque pane rendering
         Shader* textShade;//shader for text rendering
 
         int width, height;
 
-        unsigned int outVAO, outVBO;
-        std::vector<float> outV_Data;
-        std::vector<unsigned int> outIndices;
+        unsigned int outVAO, outVBO;//outline vertex array ID
+        std::vector<float> outV_Data;//outline vertex data
+        std::vector<unsigned int> outIndices;//outline indices
 
-        std::vector<float> layerAABB;
-        bool colX = 0, colY = 0;
+        std::vector<float> layerAABB;//the AABB for all of what is revealed of the layer currently (dependent on if it is collapsed)
+        bool colX = 0, colY = 0;//current collision status with the cursor in the layerAABB of the layer
+        bool overlapping = 0;//whether the cursor is currently hovering over a layer with higher precedence
         unsigned int layerPrecedence;//lower number = higher precedence, basically just index in the allLayers vector
 
-        resizeHandle* rHandle;
+        resizeHandle* rHandle;//resize handle for the layer
+        paneHandle* handle;//handle for the layer, allows collapsing, closing, and moving of the layer with a title included
 
-        UIlayer(Shader* shade, Shader* textShade, unsigned int width, unsigned int height, glm::vec2 position, std::string name);
+        UIlayer(Shader* shade, Shader* textShade, unsigned int width, unsigned int height, glm::vec2 position, std::string name);//constructor
 
         glm::vec2 nextElemPos();//retrieve 2d coordinates for ui element positions based off of number of other elements already present in the vectors
 
@@ -195,16 +249,16 @@ namespace deoui{
         void addFloatInField(float* value);
         void addVec3InField(glm::vec3* value);
 
-        void drawLayer(glm::mat4 transform, bool overlapping);
+        void pollStatus();//poll the status of every element contained in a UIlayer
+        void pollPrecedence();//update the layer's precedence value
+        void drawLayer(glm::mat4 transform);//draw the UIlayer
 
-        void deleteLayer();
+        void deleteLayer();//deletes a UIlayer and every UI element that is contained in it
     };
+    inline std::vector<UIlayer*> allLayers;//every single UIlayer that is currently active
 
-    inline std::vector<UIlayer*> allLayers;
+    void UIlayerDraw(UIlayer*& target, glm::mat4 transform);//draw a single UIlayer with nullptr checking and status polling
+    void renderUI(glm::mat4 transform);//render every UIlayer that is currently in the allLayers vector
 
-    void UIlayerDraw(UIlayer*& target, glm::mat4 transform);
-
-    void renderUI(glm::mat4 transform);
-
-    void cleanUpRes();
+    void cleanUpRes();//delete all layers in the allLayers vector
 }

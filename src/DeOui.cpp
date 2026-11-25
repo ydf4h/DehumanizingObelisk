@@ -298,11 +298,11 @@ void deoui::renderBMPfont(Shader* shade, std::string text, glm::vec2 position, g
 
 
 
-void deoui::UIelem::Draw(Shader* usedShader, glm::mat4 transform){
+void deoui::BGrect::Draw(Shader* usedShader, glm::mat4 transform){
     usedShader->use();
 
     transform = glm::mat4(1.0f);
-    transform = glm::translate(transform, position);
+    transform = glm::translate(transform, glm::vec3(position, 0.0f));
     usedShader->setMat4("model", transform);
 
     glBindVertexArray(VAO);
@@ -311,36 +311,35 @@ void deoui::UIelem::Draw(Shader* usedShader, glm::mat4 transform){
 
     glBindVertexArray(0);
 }
-void deoui::genBGrect(UIelem* target, glm::vec3 position, int width, int height){
-    target->vertexData = {
+deoui::BGrect::BGrect(glm::vec2 position, int width, int height) {
+    this->vertexData = {
         0.0f, 0.0f,
         0.0f, (float)height,
         (float)width, (float)height,
         (float)width, 0.0f
     };
-    target->indices = {
+    this->indices = {
         0, 1, 2,
         0, 2, 3
     };
     unsigned int EBO;
-    setupGLrectangle(&target->VAO, &target->VBO, &EBO, target->vertexData, target->indices);
+    setupGLrectangle(&this->VAO, &this->VBO, &EBO, this->vertexData, this->indices);
 
-    target->width = width;
-    target->height = height;
+    this->width = width;
+    this->height = height;
 
-    target->position = position;
+    this->position = position;
 }
 
 
 
 void deoui::checkbox::Draw(Shader* usedShader, Shader* textShade, glm::mat4 transform){
     if (text.size() != 0) {
-        float textScale = height / 15.0f;
-        renderText(textShade, textVAO, textVBO, text, position.x + width + 5.0f, position.y + height, textScale, glm::vec3(1.0f, 1.0f, 1.0f));
+        renderText(textShade, textVAO, textVBO, text, position.x + 15.0f + 5.0f, position.y + 15.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
     }
 
     transform = glm::mat4(1.0f);
-    transform = glm::translate(transform, position);
+    transform = glm::translate(transform, glm::vec3(position, 0.0f));
     usedShader->setMat4("model", transform);
 
     usedShader->setVec3("color", RGBcolor);
@@ -350,48 +349,45 @@ void deoui::checkbox::Draw(Shader* usedShader, Shader* textShade, glm::mat4 tran
 
     glBindVertexArray(0);
 }
-void deoui::genCheckbox(checkbox* target, bool* value, glm::vec3 position, int width, int height, std::string name){
-    target->vertexData = {
+deoui::checkbox::checkbox(bool* value, glm::vec2 position, std::string name) {
+    this->vertexData = {
         //bottom left
-        0.0f, (float)height,
+        0.0f, 15.0f,
         //top right
-        (float)width, 0.0f,
+        15.0f, 0.0f,
         //top left
         0.0f, 0.0f,
         //bottom right
-        (float)width, (float)height
+        15.0f, 15.0f
     };
 
-    target->width = width;
-    target->height = height;
-
-    target->indices = {
+    this->indices = {
         0, 1, 2,
         1, 0, 3
     };
 
-    target->position = position;
+    this->position = position;
 
-    target->value = value;
+    this->value = value;
 
-    target->AABB = {
+    this->AABB = {
         position.x, position.y,
-        position.x + (float)width, position.y + (float)height
+        position.x + 15.0f, position.y + 15.0f
     };
 
-    target->RGBcolor = glm::vec3(0.0f, 0.0f, 0.25f);
+    this->RGBcolor = glm::vec3(0.0f, 0.0f, 0.25f);
 
-    target->text = name;
+    this->text = name;
 
     std::vector<unsigned int> textIndices = {
         0, 1, 2,
         0, 3, 2
     };
     unsigned int textEBO;
-    setupGLtexRectangle(&target->textVAO, &target->textVBO, &textEBO, textIndices);
+    setupGLtexRectangle(&this->textVAO, &this->textVBO, &textEBO, textIndices);
 
     unsigned int VBO, EBO;
-    setupGLrectangle(&target->VAO, &VBO, &EBO, target->vertexData, target->indices);
+    setupGLrectangle(&this->VAO, &VBO, &EBO, this->vertexData, this->indices);
 }
 void deoui::checkbox::pollStatus(){
     using namespace deoEvent;
@@ -440,12 +436,11 @@ void deoui::checkbox::pollStatus(){
 
 void deoui::button::Draw(Shader* usedShader, Shader* textShade, glm::mat4 transform) {
     if (text.size() != 0) {
-        float textScale = height / 15.0f;
-        renderText(textShade, textVAO, textVBO, text, position.x + width + 5.0f, position.y + height, textScale, glm::vec3(1.0f, 1.0f, 1.0f));
+        renderText(textShade, textVAO, textVBO, text, position.x + 15.0f + 5.0f, position.y + 15.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
     }
 
     transform = glm::mat4(1.0f);
-    transform = glm::translate(transform, position);
+    transform = glm::translate(transform, glm::vec3(position, 0.0f));
     usedShader->setMat4("model", transform);
 
     usedShader->setVec3("color", RGBcolor);
@@ -455,45 +450,42 @@ void deoui::button::Draw(Shader* usedShader, Shader* textShade, glm::mat4 transf
 
     glBindVertexArray(0);
 }
-void deoui::genButton(button* target, glm::vec3 position, int width, int height, std::string name){
-    target->vertexData = {
+deoui::button::button(glm::vec2 position, std::string name){
+    this->vertexData = {
         //bottom left
-        0.0f, (float)height,
+        0.0f, 15.0f,
         //top right
-        (float)width, 0.0f,
+        15.0f, 0.0f,
         //top left
         0.0f, 0.0f,
         //bottom right
-        (float)width, (float)height
+        15.0f, 15.0f
     };
 
-    target->width = width;
-    target->height = height;
-
-    target->indices = {
+    this->indices = {
         0, 1, 2,
         1, 0, 3
     };
 
-    target->position = position;
+    this->position = position;
 
-    target->AABB = {
+    this->AABB = {
         position.x, position.y,
-        position.x + (float)width, position.y + (float)height
+        position.x + 15.0f, position.y + 15.0f
     };
 
-    target->RGBcolor = glm::vec3(0.0f, 0.0f, 0.25f);
+    this->RGBcolor = glm::vec3(0.0f, 0.0f, 0.25f);
 
-    target->text = name;
+    this->text = name;
     std::vector<unsigned int> textIndices = {
         0, 1, 2,
         0, 3, 2
     };
     unsigned int textEBO;
-    setupGLtexRectangle(&target->textVAO, &target->textVBO, &textEBO, textIndices);
+    setupGLtexRectangle(&this->textVAO, &this->textVBO, &textEBO, textIndices);
 
     unsigned int VBO, EBO;
-    setupGLrectangle(&target->VAO, &VBO, &EBO, target->vertexData, target->indices);
+    setupGLrectangle(&this->VAO, &VBO, &EBO, this->vertexData, this->indices);
 }
 void deoui::button::pollStatus() {
     using namespace deoEvent;
@@ -534,57 +526,53 @@ void deoui::button::pollStatus() {
 
 void deoui::paneHandle::Draw(Shader* usedShader, Shader* text, glm::mat4 transform) {
     transform = glm::mat4(1.0f);
-    transform = glm::translate(transform, this->position);
+    transform = glm::translate(transform, glm::vec3(this->panePosition, 0.0f));
 
     usedShader->use();
-    usedShader->setVec3("color", this->RGBcolor);
+    usedShader->setVec3("color", glm::vec3(0.125f));
     usedShader->setMat4("model", transform);
 
-    glBindVertexArray(this->VAO);
-    glDrawElements(GL_TRIANGLES, this->indices.size(), GL_UNSIGNED_INT, (void*)0);
+    glBindVertexArray(this->paneVAO);
+    glDrawElements(GL_TRIANGLES, this->paneIndices.size(), GL_UNSIGNED_INT, (void*)0);
 
     this->close->Draw(usedShader, text, transform);
     this->collapse->Draw(usedShader, text, transform);
 
-    float textScale = this->height / 20.0f;
-    renderText(text, this->textVAO, this->textVBO, this->name, this->position.x + 5.0f, this->position.y + this->height - 2.0f, textScale, glm::vec3(1.0f));
+    float textScale = 15.0f / 20.0f;
+    renderText(text, this->textVAO, this->textVBO, this->name, this->panePosition.x + 5.0f, this->panePosition.y + 15.0f - 2.0f, textScale, glm::vec3(1.0f));
 }
-void deoui::genPaneHandle(paneHandle* target, UIlayer* parent, glm::vec2 position, int width, int height, std::string name) {
-    target->close = new button;
-    target->collapse = new checkbox;
-    target->parent = parent;
-    genButton(target->close, glm::vec3(position.x + (float)width - 15.0f, position.y, 0.0f), 15, 15, "");
-    genCheckbox(target->collapse, &target->collapsed, glm::vec3(position.x, position.y, 0.0f), 15, 15, "");
-    target->width = width - 30;
-    target->height = height;
-    target->RGBcolor = glm::vec3(0.125f);
-    target->position = glm::vec3(position.x + 15.0f, position.y, 0.0f);
+deoui::paneHandle::paneHandle(UIlayer* parent, glm::vec2 position, int width, std::string name) {
+    this->close = new button(glm::vec2(position.x + (float)width - 15.0f, position.y), "");
+    this->collapse = new checkbox(&this->collapsed, glm::vec2(position.x, position.y), "");
+    this->parent = parent;
+    this->paneWidth = width - 30;
+    this->panePosition = glm::vec3(position.x + 15.0f, position.y, 0.0f);
 
-    target->paneAABB = {
-        target->position.x, target->position.y,
-        target->position.x + static_cast<float>(target->width), target->position.y + static_cast<float>(target->height)
+    this->paneAABB = {
+        this->panePosition.x, this->panePosition.y,
+        this->panePosition.x + static_cast<float>(this->paneWidth), this->panePosition.y + 15.0f
     };
 
-    target->name = name;
+    this->name = name;
     std::vector<unsigned int> textIndices = {
         0, 1, 2,
         0, 3, 2
     };
     unsigned int textEBO;
-    setupGLtexRectangle(&target->textVAO, &target->textVBO, &textEBO, textIndices);
+    setupGLtexRectangle(&this->textVAO, &this->textVBO, &textEBO, textIndices);
 
-    target->vertexData = {
+    this->paneVertexData = {
         0.0f, 0.0f,
-        0.0f, static_cast<float>(target->height),
-        static_cast<float>(target->width), static_cast<float>(target->height),
-        static_cast<float>(target->width), 0.0f
+        0.0f, 15.0f,
+        static_cast<float>(this->paneWidth), 15.0f,
+        static_cast<float>(this->paneWidth), 0.0f
     };
-    target->indices = {
+    this->paneIndices = {
         0, 1, 2,
         0, 2, 3
     };
     unsigned int EBO;
-    setupGLrectangle(&target->VAO, &target->VBO, &EBO, target->vertexData, target->indices);
+    setupGLrectangle(&this->paneVAO, &this->paneVBO, &EBO, this->paneVertexData, this->paneIndices);
 }
 bool deoui::paneHandle::isMouseHover() {
     updCurInAABB(this->paneAABB, deoEvent::mainCursor->currentPos, &this->colX, &this->colY);
@@ -616,8 +604,8 @@ void deoui::paneHandle::pollStatus() {
         }
         this->posDiff = glm::vec2(static_cast<float>(diffX), static_cast<float>(diffY));
 
-        this->position.x += this->posDiff.x;
-        this->position.y += this->posDiff.y;
+        this->panePosition.x += this->posDiff.x;
+        this->panePosition.y += this->posDiff.y;
 
         this->close->position.x += this->posDiff.x;
         this->close->position.y += this->posDiff.y;
@@ -626,9 +614,9 @@ void deoui::paneHandle::pollStatus() {
         this->collapse->position.y += this->posDiff.y;
 
         if (diffX != 0 || diffY != 0) {
-            updRectAABB(&this->paneAABB, this->width, this->height, this->position);
-            updRectAABB(&this->close->AABB, this->close->width, this->close->height, this->close->position);
-            updRectAABB(&this->collapse->AABB, this->collapse->width, this->collapse->height, this->collapse->position);
+            updRectAABB(&this->paneAABB, this->paneWidth, 15.0f, this->panePosition);
+            updRectAABB(&this->close->AABB, 15.0f, 15.0f, this->close->position);
+            updRectAABB(&this->collapse->AABB, 15.0f, 15.0f, this->collapse->position);
         }
         
         this->parent->pane->position.x += this->parent->handle->posDiff.x;
@@ -647,13 +635,13 @@ void deoui::paneHandle::pollStatus() {
         for (unsigned int i = 0; i < this->parent->buttons.size(); i++) {
             this->parent->buttons[i]->position.x += this->parent->handle->posDiff.x;
             this->parent->buttons[i]->position.y += this->parent->handle->posDiff.y;
-            updRectAABB(&this->parent->buttons[i]->AABB, this->parent->buttons[i]->width, this->parent->buttons[i]->height, this->parent->buttons[i]->position);
+            updRectAABB(&this->parent->buttons[i]->AABB, 15.0f, 15.0f, this->parent->buttons[i]->position);
         }
 
         for (unsigned int i = 0; i < this->parent->checkboxes.size(); i++) {
             this->parent->checkboxes[i]->position.x += this->parent->handle->posDiff.x;
             this->parent->checkboxes[i]->position.y += this->parent->handle->posDiff.y;
-            updRectAABB(&this->parent->checkboxes[i]->AABB, this->parent->checkboxes[i]->width, this->parent->checkboxes[i]->height, this->parent->checkboxes[i]->position);
+            updRectAABB(&this->parent->checkboxes[i]->AABB, 15.0f, 15.0f, this->parent->checkboxes[i]->position);
         }
 
         for (unsigned int i = 0; i < this->parent->floatFields.size(); i++) {
@@ -678,32 +666,30 @@ void deoui::paneHandle::pollStatus() {
 
 
 
-void deoui::genResizeHandle(resizeHandle* target, UIlayer* parent, glm::vec2 position, std::string pathToTex) {
-    target->parent = parent;
+deoui::resizeHandle::resizeHandle(UIlayer* parent, glm::vec2 position, std::string pathToTex) {
+    this->parent = parent;
 
-    target->vertexData = {
+    this->vertexData = {
         0.0f, 0.0f,   0.0f, 1.0f,
         0.0f, 20.0f,   0.0f, 0.0f,
         20.0f, 20.0f,   1.0f, 0.0f,
         20.0f, 0.0f,   1.0f, 1.0f
     };
-    target->indices = {
+    this->indices = {
         0, 1, 2,
         0, 2, 3
     };
-    target->RGBcolor = glm::vec3(0.0f, 0.0f, 0.25f);
-    target->position = glm::vec3(position, 0.0f);
-    target->width = 20;
-    target->height = 20;
+    this->RGBcolor = glm::vec3(0.0f, 0.0f, 0.25f);
+    this->position = glm::vec3(position, 0.0f);
 
-    unsigned int EBO;
-    setupGLtexRectangle(&target->VAO, &target->VBO, &EBO, target->vertexData, target->indices);
+    unsigned int VBO, EBO;
+    setupGLtexRectangle(&this->VAO, &VBO, &EBO, this->vertexData, this->indices);
 
-    target->resizeTex = textureFromFile(pathToTex.c_str());
+    this->resizeTex = textureFromFile(pathToTex.c_str());
 
-    target->AABB = {
+    this->AABB = {
         position.x, position.y,
-        position.x + static_cast<float>(target->width), position.y + static_cast<float>(target->width)
+        position.x + 20.0f, position.y + 20.0f
     };
 }
 void deoui::resizeHandle::pollStatus() {
@@ -754,14 +740,14 @@ void deoui::resizeHandle::pollStatus() {
             this->parent->width += diffX;
             this->parent->pane->width = this->parent->width;
 
-            this->parent->handle->width += diffX;
-            this->parent->handle->vertexData = {
+            this->parent->handle->paneWidth += diffX;
+            this->parent->handle->paneVertexData = {
                 0.0f, 0.0f,
-                0.0f, static_cast<float>(this->parent->handle->height),
-                static_cast<float>(this->parent->handle->width), static_cast<float>(this->parent->handle->height),
-                static_cast<float>(this->parent->handle->width), 0.0f
+                0.0f, 15.0f,
+                static_cast<float>(this->parent->handle->paneWidth), 15.0f,
+                static_cast<float>(this->parent->handle->paneWidth), 0.0f
             };
-            updGLrectangle(this->parent->handle->VAO, this->parent->handle->VBO, this->parent->handle->vertexData);
+            updGLrectangle(this->parent->handle->paneVAO, this->parent->handle->paneVBO, this->parent->handle->paneVertexData);
             this->parent->handle->close->position.x += diffX;
 
             this->parent->rHandle->position.x += diffX;
@@ -789,14 +775,14 @@ void deoui::resizeHandle::pollStatus() {
 
         updRectAABB(&this->parent->layerAABB, this->parent->pane->width, this->parent->pane->height + 15, this->parent->handle->collapse->position);
 
-        updRectAABB(&this->parent->handle->paneAABB, this->parent->handle->width, this->parent->handle->height, this->parent->handle->position);
-        updRectAABB(&this->parent->handle->close->AABB, this->parent->handle->close->width, this->parent->handle->close->height, this->parent->handle->close->position);
-        updRectAABB(&this->parent->rHandle->AABB, this->parent->rHandle->width, this->parent->rHandle->height, this->parent->rHandle->position);
+        updRectAABB(&this->parent->handle->paneAABB, this->parent->handle->paneWidth, 15.0f, this->parent->handle->panePosition);
+        updRectAABB(&this->parent->handle->close->AABB, 15.0f, 15.0f, this->parent->handle->close->position);
+        updRectAABB(&this->parent->rHandle->AABB, 20.0f, 20.0f, this->parent->rHandle->position);
     }
 }
 void deoui::resizeHandle::Draw(Shader* usedShader, glm::mat4 transform) {
     transform = glm::mat4(1.0f);
-    transform = glm::translate(transform, this->position);
+    transform = glm::translate(transform, glm::vec3(this->position, 0.0f));
     usedShader->use();
     usedShader->setVec3("textColor", this->RGBcolor);
     usedShader->setMat4("model", transform);
@@ -807,8 +793,8 @@ void deoui::resizeHandle::Draw(Shader* usedShader, glm::mat4 transform) {
 
 
 
-void deoui::genFloatInField(floatInField* target, glm::vec2 position, float* value) {
-    target->vertexData = {
+deoui::floatInField::floatInField(glm::vec2 position, float* value) {
+    this->vertexData = {
         0.0f, 0.0f,
         0.0f, 20.0f,
         60.0f, 20.0f,
@@ -819,22 +805,22 @@ void deoui::genFloatInField(floatInField* target, glm::vec2 position, float* val
         0, 2, 3
     };
     unsigned int EBO;
-    setupGLrectangle(&target->VAO, &target->VBO, &EBO, target->vertexData, indices);
-    target->position = position;
+    setupGLrectangle(&this->VAO, &this->VBO, &EBO, this->vertexData, indices);
+    this->position = position;
 
     unsigned int textEBO;
-    setupGLtexRectangle(&target->textVAO, &target->textVBO, &textEBO, indices);
+    setupGLtexRectangle(&this->textVAO, &this->textVBO, &textEBO, indices);
 
-    target->RGBcolor = glm::vec3(0.5f);
+    this->RGBcolor = glm::vec3(0.5f);
 
-    target->AABB = {
+    this->AABB = {
         position.x, position.y,
         position.x + 60.0f, position.y + 20.0f
     };
-    target->value = value;
+    this->value = value;
 
-    target->displayValue = std::to_string(*value);
-    target->displayValue = trimFSTR(target->displayValue);
+    this->displayValue = std::to_string(*value);
+    this->displayValue = trimFSTR(this->displayValue);
 }
 void deoui::floatInField::Draw(Shader* usedShader, Shader* textShader, glm::mat4 transform) {
     usedShader->use();
@@ -911,19 +897,18 @@ void deoui::floatInField::pollStatus() {
 
 
 
-void deoui::genVec3InField(vec3InField* target, glm::vec2 position, glm::vec3* value) {
-    target->position = position;
-    target->vectorValue = value;
+deoui::vec3InField::vec3InField(glm::vec2 position, glm::vec3* value) {
+    this->position = position;
+    this->vectorValue = value;
 
     for (unsigned char i = 0; i < 3; i++) {
-        target->fields[i] = new floatInField;
-        glm::vec2 currentPos = glm::vec2(target->position.x + (65.0f * i), target->position.y);
+        glm::vec2 currentPos = glm::vec2(this->position.x + (65.0f * i), this->position.y);
         if (i == 0) {
-            genFloatInField(target->fields[i], currentPos, &target->vectorValue->x);
+            this->fields[i] = new floatInField(currentPos, &this->vectorValue->x);
         }else if (i == 1) {
-            genFloatInField(target->fields[i], currentPos, &target->vectorValue->y);
+            this->fields[i] = new floatInField(currentPos, &this->vectorValue->y);
         }else {
-            genFloatInField(target->fields[i], currentPos, &target->vectorValue->z);
+            this->fields[i] = new floatInField(currentPos, &this->vectorValue->z);
         }
     }
 }
@@ -949,7 +934,7 @@ void::deoui::vec3InField::updPositions(int diffX, int diffY) {
 
 
 
-void deoui::UIlayer::drawLayer(glm::mat4 transform, bool overlapping) {
+void deoui::UIlayer::drawLayer(glm::mat4 transform) {
     glDisable(GL_DEPTH_TEST);//everything should render sequentially and stack on top of each other
     glDisable(GL_STENCIL_TEST);
 
@@ -964,7 +949,7 @@ void deoui::UIlayer::drawLayer(glm::mat4 transform, bool overlapping) {
     glBindVertexArray(this->outVAO);
     shade->use();
     shade->setVec3("color", glm::vec3(1.0f));
-    transform = glm::translate(transform, glm::vec3(this->handle->position.x - 15.0f, this->handle->position.y, 0.0f));
+    transform = glm::translate(transform, glm::vec3(this->handle->panePosition.x - 15.0f, this->handle->panePosition.y, 0.0f));
     shade->setMat4("model", transform);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
 
@@ -991,6 +976,86 @@ void deoui::UIlayer::drawLayer(glm::mat4 transform, bool overlapping) {
 
     glEnable(GL_DEPTH_TEST);
 }
+void deoui::UIlayer::pollStatus() {
+    bool lastCollapseStat = this->handle->collapsed;//used to check if pane was just collapsed/uncollapsed
+    if (!this->overlapping) {//cursor is not hovering over another layer with higher precedence
+        this->handle->pollStatus();
+        if (!this->handle->collapsed) {//layer is not collapsed
+            this->rHandle->pollStatus();
+            if (lastCollapseStat != this->handle->collapsed) {//checks if pane was just uncollapsed
+                this->outV_Data = {
+                    -1.0f, -1.0f,
+                    -1.0f, this->height + 16.0f,
+                    this->width + 1.0f, this->height + 16.0f,
+                    this->width + 1.0f, -1.0f
+                };
+                updGLrectangle(this->outVAO, this->outVBO, this->outV_Data);
+                updRectAABB(&this->layerAABB, this->pane->width, this->pane->height + 15, this->handle->collapse->position);
+            }
+            for (unsigned int i = 0; i < this->buttons.size(); i++) {
+                this->buttons[i]->pollStatus();
+            }
+            for (unsigned int i = 0; i < this->checkboxes.size(); i++) {
+                this->checkboxes[i]->pollStatus();
+            }
+            for (unsigned int i = 0; i < this->floatFields.size(); i++) {
+                this->floatFields[i]->pollStatus();
+            }
+            for (unsigned int i = 0; i < this->vec3Fields.size(); i++) {
+                this->vec3Fields[i]->pollStatus();
+            }
+        }else if (lastCollapseStat != this->handle->collapsed) {//layer is collapsed and was just collapsed
+            this->outV_Data = {
+                -1.0f, -1.0f,
+                -1.0f, 16.0f,
+                this->handle->paneWidth + 31.0f, 16.0f,
+                this->handle->paneWidth + 31.0f, -1.0f
+            };//update outline vertex data
+            updGLrectangle(this->outVAO, this->outVBO, this->outV_Data);
+            updRectAABB(&this->layerAABB, this->pane->width, 15, this->handle->collapse->position);
+        }//checks if pane was just collapsed
+    }
+}
+void deoui::UIlayer::pollPrecedence() {
+    this->overlapping = 0;//reset overlapping value
+    for (unsigned int i = 0; i < this->layerPrecedence; i++) {//search through all layers with higher precedence (if any)
+        if (allLayers[i]->colX && allLayers[i]->colY) {//will be true if mouse is hovering over layer with higher precedence
+            this->overlapping = 1;//update overlapping value
+            break;//stop search
+        }
+    }
+    updCurInAABB(this->layerAABB, deoEvent::mainCursor->currentPos, &this->colX, &this->colY);//check if the cursor is currently inside the layerAABB of the layer
+    if (this->colX && this->colY) {//if cursor is inside this layer's AABB
+        if (deoEvent::MLC != nullptr) {
+            if (deoEvent::MLC->activity == GLFW_PRESS && deoEvent::LMLC.activity == GLFW_RELEASE) {//mouse left click has just started being held down
+                if (this->layerPrecedence != 0) {//not the highest precedence layer currently
+                    if (!this->overlapping) {//cursor not hovering over layer with higher precedence
+                        UIlayer* overwriter = this;//current layer, will be shoved to front
+                        UIlayer* overwritten = allLayers[0];//current highest precedence layer, will be shoved back one
+
+                        std::vector<UIlayer*> uninvolved;//all layers that will not be affected currently
+                        for (unsigned int i = 0; i < allLayers.size(); i++) {
+                            if (i != overwriter->layerPrecedence && i != overwritten->layerPrecedence) {
+                                uninvolved.push_back(allLayers[i]);//add uninvolved layer to the uninvolved vector
+                            }
+                        }
+
+                        allLayers.clear();//clear all layers from the allLayers vector
+                        allLayers.push_back(overwriter);//first, have the overwriter at index 0
+                        allLayers.push_back(overwritten);//then, have the overwritten layer at index 1
+
+                        overwriter->layerPrecedence = 0;//change layer precedence of overwriter
+                        overwritten->layerPrecedence = 1;//change layer precedence of overwritten
+                        for (unsigned int i = 0; i < uninvolved.size(); i++) {//add all uninvolved layers back to the allLayers vector
+                            uninvolved[i]->layerPrecedence = i + 2;//update layer precedence of each uninvolved layer
+                            allLayers.push_back(uninvolved[i]);//add uninvolved layer to the final allLayers vector
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 glm::vec2 deoui::UIlayer::nextElemPos() {
     glm::vec2 finalPos = this->pane->position;
     finalPos.x += 5.0f;
@@ -1010,38 +1075,32 @@ glm::vec2 deoui::UIlayer::nextElemPos() {
     return finalPos;
 }
 void deoui::UIlayer::addButton(std::string name) {
-    button* target = new button;
     glm::vec2 position = this->nextElemPos();
-    genButton(target, glm::vec3(position, 0.0f), 15, 15, name);
+    button* target = new button(position, name);
     this->buttons.push_back(target);
 }
 void deoui::UIlayer::addCheckbox(std::string name, bool* value) {
-    checkbox* target = new checkbox;
     glm::vec2 position = this->nextElemPos();
-    genCheckbox(target, value, glm::vec3(position, 0.0f), 15, 15, name);
+    checkbox* target = new checkbox(value, position, name);
     this->checkboxes.push_back(target);
 }
 void deoui::UIlayer::addFloatInField(float* value) {
-    floatInField* target = new floatInField;
     glm::vec2 position = this->nextElemPos();
-    genFloatInField(target, position, value);
+    floatInField* target = new floatInField(position, value);
     this->floatFields.push_back(target);
 }
 void deoui::UIlayer::addVec3InField(glm::vec3* value) {
-    vec3InField* target = new vec3InField;
     glm::vec2 position = this->nextElemPos();
-    genVec3InField(target, position, value);
+    vec3InField* target = new vec3InField(position, value);
     this->vec3Fields.push_back(target);
 }
 deoui::UIlayer::UIlayer(Shader* shade, Shader* textShade, unsigned int width, unsigned int height, glm::vec2 position, std::string name) {
-    this->pane = new BGrect;
-    genBGrect(this->pane, glm::vec3(position.x, position.y + 15.0f, 0.0f), width, height);
+    this->pane = new BGrect(glm::vec2(position.x, position.y + 15.0f), width, height);
     this->pane->RGBcolor = glm::vec3(0.0f);
     this->width = width;
     this->height = height;
 
-    this->handle = new paneHandle;
-    genPaneHandle(this->handle, this, glm::vec3(position, 0.0f), width, 15, name);
+    this->handle = new paneHandle(this, position, width, name);
 
     this->outV_Data = {
         -1.0f, -1.0f,
@@ -1064,9 +1123,8 @@ deoui::UIlayer::UIlayer(Shader* shade, Shader* textShade, unsigned int width, un
     this->shade = shade;
     this->textShade = textShade;
 
-    this->rHandle = new resizeHandle;
     glm::vec2 rHandlePos = glm::vec2(position.x + static_cast<float>(width) - 20.0f, position.y + static_cast<float>(height) - 5.0f);
-    genResizeHandle(this->rHandle, this, rHandlePos, "../res/textures/uiThings/resize.png");
+    this->rHandle = new resizeHandle(this, rHandlePos, "../res/textures/uiThings/resize.png");
 
     this->layerPrecedence = allLayers.size();
     allLayers.push_back(this);
@@ -1091,83 +1149,10 @@ void deoui::UIlayer::deleteLayer() {
 
 void deoui::UIlayerDraw(UIlayer*& target, glm::mat4 transform) {
     if (target != nullptr) {
-        bool lastCollapseStat = target->handle->collapsed;//used to check if pane was just collapsed/uncollapsed
-        target->handle->pollStatus();
-        if (!target->handle->collapsed) {
-            target->rHandle->pollStatus();
-            if (lastCollapseStat != target->handle->collapsed) {
-                target->outV_Data = {
-                    -1.0f, -1.0f,
-                    -1.0f, target->height + 16.0f,
-                    target->width + 1.0f, target->height + 16.0f,
-                    target->width + 1.0f, -1.0f
-                };
-                updGLrectangle(target->outVAO, target->outVBO, target->outV_Data);
-                updRectAABB(&target->layerAABB, target->pane->width, target->pane->height + 15, target->handle->collapse->position);
-            }//checks if pane was just uncollapsed
-            for (unsigned int i = 0; i < target->buttons.size(); i++) {
-                target->buttons[i]->pollStatus();
-            }
-            for (unsigned int i = 0; i < target->checkboxes.size(); i++) {
-                target->checkboxes[i]->pollStatus();
-            }
-            for (unsigned int i = 0; i < target->floatFields.size(); i++) {
-                target->floatFields[i]->pollStatus();
-            }
-            for (unsigned int i = 0; i < target->vec3Fields.size(); i++) {
-                target->vec3Fields[i]->pollStatus();
-            }
-        }else if (lastCollapseStat != target->handle->collapsed) {
-            target->outV_Data = {
-                -1.0f, -1.0f,
-                -1.0f, target->handle->height + 1.0f,
-                target->handle->width + 31.0f, target->handle->height + 1.0f,
-                target->handle->width + 31.0f, -1.0f
-            };
-            updGLrectangle(target->outVAO, target->outVBO, target->outV_Data);
-            updRectAABB(&target->layerAABB, target->pane->width, 15, target->handle->collapse->position);
-        }//checks if pane was just collapsed
+        target->pollPrecedence();
+        target->pollStatus();
 
-        bool overlapping = 0;
-        updCurInAABB(target->layerAABB, deoEvent::mainCursor->currentPos, &target->colX, &target->colY);
-        if (target->colX && target->colY) {
-            if (deoEvent::MLC != nullptr) {
-                if (deoEvent::MLC->activity == GLFW_PRESS && deoEvent::LMLC.activity == GLFW_RELEASE) {
-                    if (target->layerPrecedence != 0) {
-                        for (unsigned int i = 0; i < target->layerPrecedence; i++) {//search through all layers with higher precedence
-                            if (allLayers[i]->colX && allLayers[i]->colY) {//will be true if mouse is hovering over layer with higher precedence
-                                overlapping = 1;
-                                break;
-                            }
-                        }
-                        if (!overlapping) {
-                            UIlayer* overwriter = target;
-                            UIlayer* overwritten = allLayers[0];
-
-                            std::vector<UIlayer*> uninvolved;
-                            for (unsigned int i = 0; i < allLayers.size(); i++) {
-                                if (i != overwriter->layerPrecedence && i != overwritten->layerPrecedence) {
-                                    uninvolved.push_back(allLayers[i]);
-                                }
-                            }
-
-                            allLayers.clear();
-                            allLayers.push_back(overwriter);
-                            allLayers.push_back(overwritten);
-
-                            overwriter->layerPrecedence = 0;
-                            overwritten->layerPrecedence = 1;
-                            for (unsigned int i = 0; i < uninvolved.size(); i++) {
-                                uninvolved[i]->layerPrecedence = i + 2;
-                                allLayers.push_back(uninvolved[i]);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        target->drawLayer(transform, overlapping);
+        target->drawLayer(transform);
     }
 }
 
